@@ -7,6 +7,8 @@ import 'package:to_do_list/services/database_service.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -39,135 +41,211 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    int totalTodos = todos.length; // contoh data
+    int completedTodos = todos.where((todo) => todo.isCompleted).length;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.purple[400],
       appBar: AppBar(
-        toolbarHeight: 100,
-        title: Center(child: Padding(
+        backgroundColor: Colors.purple[400],
+        toolbarHeight: 200,
+        title: Padding(
           padding: const EdgeInsets.only(top: 30.0),
-          child: Column(children: [
-            
-             Text(DateTime.now().toString().split(' ')[0], style: const TextStyle(fontSize: 12, fontFamily: "Poppins", fontWeight: FontWeight.w300)),
-             const Text('To-Do List', style: TextStyle(fontSize: 24, fontFamily: "Poppins", fontWeight: FontWeight.bold))
-          ],),
-        )),
-        backgroundColor: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                DateTime.now().toString().split(' ')[0],
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontFamily: "Poppins",
+                  fontWeight: FontWeight.w300,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'To-Do List',
+                style: TextStyle(
+                  fontSize: 34,
+                  fontFamily: "Poppins",
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildTotalBox('Total', totalTodos),
+                  const SizedBox(width: 12),
+                  _buildTotalBox('Completed', completedTodos),
+                ],
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
       ),
       body: Container(
         margin: const EdgeInsets.only(top: 30),
         child: _buildApp(),
       ),
-
-      // tombol tambah
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _addOrEditToDo();
         },
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.purple[400],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+        child: const Icon(Icons.add, color: Colors.white, size: 30),
       ),
     );
   }
+
+  //widget untuk menampilkan total to-do dan to-do yang sudah selesai
+  Widget _buildTotalBox(String label, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildApp() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ListView.builder(
-        itemCount: todos.length,
-        itemBuilder: (context, index) {
-          final todo = todos[index];
-          return Card(
-            color: todo.isCompleted ? Colors.grey[400] : Colors.grey[100],
-            child: ListTile(
-              // ketika di tap, akan menampilkan konfirmasi untuk menghapus
-              onTap: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Konfirmasi'),
-                    content: const Text(
-                      'Apakah Anda yakin ingin menghapus to-do ini?',
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ListView.builder(
+          itemCount: todos.length,
+          itemBuilder: (context, index) {
+            final todo = todos[index];
+
+            //
+            return Card(
+              color: todo.isCompleted ? Colors.grey[600] : Colors.white,
+              child: ListTile(
+                // ketika di tap, akan menampilkan konfirmasi untuk menghapus
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Konfirmasi'),
+                      content: const Text(
+                        'Apakah Anda yakin ingin menghapus to-do ini?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, false);
+                          },
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            await DatabaseService.db.writeTxn(() async {
+                              await DatabaseService.db.todos.delete(todo.id);
+                            });
+                            // ignore: use_build_context_synchronously
+                            Navigator.pop(context, true);
+                          },
+                          child: const Text('Hapus'),
+                        ),
+                      ],
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context, false);
-                        },
-                        child: const Text('Batal'),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          await DatabaseService.db.writeTxn(() async {
-                            await DatabaseService.db.todos.delete(todo.id);
-                          });
-                          // ignore: use_build_context_synchronously
-                          Navigator.pop(context, true);
-                        },
-                        child: const Text('Hapus'),
-                      ),
-                    ],
+                  );
+                  if (confirm == true) {
+                    await DatabaseService.db.writeTxn(() async {
+                      await DatabaseService.db.todos.delete(todo.id);
+                    });
+                  }
+                },
+                title: Text(
+                  todo.title ?? "",
+                  style: TextStyle(
+                    fontFamily: "Poppins",
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    decoration: todo.isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
+                    color: todo.isCompleted ? Colors.black54 : Colors.black,
                   ),
-                );
-                if (confirm == true) {
-                  await DatabaseService.db.writeTxn(() async {
-                    await DatabaseService.db.todos.delete(todo.id);
-                  });
-                }
-              },
-              title: Text(
-                todo.title ?? "",
-                style: TextStyle(
-                  fontFamily: "Poppins",
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  decoration: todo.isCompleted
-                      ? TextDecoration.lineThrough
-                      : null,
-                  color: todo.isCompleted ? Colors.black54 : Colors.black,
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      todo.description ?? "",
+                      style: TextStyle(
+                        decoration: todo.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: todo.isCompleted ? Colors.black54 : Colors.black,
+                      ),
+                    ),
+                    if (todo.createdAt != null)
+                      Text(
+                        'Dibuat: ${todo.createdAt?.day}/${todo.createdAt?.month}/${todo.createdAt?.year}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: todo.isCompleted
+                              ? Colors.black
+                              : Colors.grey[700],
+                        ),
+                      ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // icon untuk mengedit to-do
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.grey),
+                      onPressed: () {
+                        _addOrEditToDo(todo: todo);
+                      },
+                    ),
+                    Checkbox(
+                      value: todo.isCompleted,
+                      onChanged: (value) async {
+                        await DatabaseService.db.writeTxn(() async {
+                          await DatabaseService.db.todos.put(
+                            todo.copyWith(isCompleted: value),
+                          );
+                        });
+                      },
+                    ),
+                  ],
                 ),
               ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    todo.description ?? "",
-                    style: TextStyle(
-                      decoration: todo.isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
-                      color: todo.isCompleted ? Colors.black54 : Colors.black,
-                    ),
-                  ),
-                  if (todo.createdAt != null)
-                    Text(
-                      'Dibuat: ${todo.createdAt?.day}/${todo.createdAt?.month}/${todo.createdAt?.year}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // icon untuk mengedit to-do
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      _addOrEditToDo(todo: todo);
-                    },
-                  ),
-                  Checkbox(
-                    value: todo.isCompleted ,
-                    onChanged: (value) async {
-                      await DatabaseService.db.writeTxn(() async {
-                        await DatabaseService.db.todos.put(
-                          todo.copyWith(isCompleted: value),
-                        );
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -197,6 +275,8 @@ class _HomePageState extends State<HomePage> {
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(labelText: "Deskripsi"),
+                maxLines: 4,
+                minLines: 2,
               ),
             ],
           ),
@@ -232,9 +312,7 @@ class _HomePageState extends State<HomePage> {
                   Navigator.pop(context);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Judul dan Deskripsi tidak boleh kosong'),
-                    ),
+                    const SnackBar(content: Text('Judul tidak boleh kosong')),
                   );
                   Navigator.pop(context);
                 }

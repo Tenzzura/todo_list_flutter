@@ -13,6 +13,7 @@ class Todo {
   DateTime? createdAt;
   bool isCompleted = false;
 
+  // Constructor
   Todo copyWith({
     String? title,
     String? description,
