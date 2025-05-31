@@ -42,10 +42,21 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Center(child: const Text('To-Do List', style: TextStyle(fontSize: 24, fontFamily: "Poppins", fontWeight: FontWeight.bold))),
+        toolbarHeight: 100,
+        title: Center(child: Padding(
+          padding: const EdgeInsets.only(top: 30.0),
+          child: Column(children: [
+            
+             Text(DateTime.now().toString().split(' ')[0], style: const TextStyle(fontSize: 12, fontFamily: "Poppins", fontWeight: FontWeight.w300)),
+             const Text('To-Do List', style: TextStyle(fontSize: 24, fontFamily: "Poppins", fontWeight: FontWeight.bold))
+          ],),
+        )),
         backgroundColor: Colors.white,
       ),
-      body: _buildApp(),
+      body: Container(
+        margin: const EdgeInsets.only(top: 30),
+        child: _buildApp(),
+      ),
 
       // tombol tambah
       floatingActionButton: FloatingActionButton(
@@ -56,7 +67,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   Widget _buildApp() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
